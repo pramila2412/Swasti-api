@@ -1,0 +1,126 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   @default("SUPER_ADMIN")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SiteSetting {
+  id               String   @id @default("default")
+  siteName         String   @default("Swasti PET/CT & Nuclear Medicine")
+  tagline          String   @default("Precision Imaging, Personalized Care")
+  announcementBar  String   @default("Emergency PET/CT Scans & Therapy consultations available with prior booking.")
+  showAnnouncement Boolean  @default(true)
+  phone1           String   @default("+91 471 244 4455")
+  phone2           String   @default("+91 9400 00 4455")
+  whatsappNumber   String   @default("+919400004455")
+  email            String   @default("info@swastipetct.com")
+  address          String   @default("Sreelekshmi Building, Medical College P.O. Junction, Ulloor, Thiruvananthapuram, Kerala - 695011")
+  timingHours      String   @default("Mon - Sat: 8:00 AM - 8:00 PM | Sun: On Appointment")
+  heroTitle        String   @default("Precision Imaging & Advanced Theranostics")
+  heroSubtitle     String   @default("South Kerala's premier Nuclear Medicine, high-definition PET/CT, and Targeted Molecular Therapy center under Nucleuz Healthcare.")
+  heroBadge        String   @default("AERB & NABL Quality Compliant Facility")
+  updatedAt        DateTime @updatedAt
+}
+
+model Service {
+  id             String   @id @default(cuid())
+  slug           String   @unique
+  title          String
+  category       String   // "SCANS", "CLINICS", "THERAPY", "LAB"
+  shortDesc      String
+  fullDesc       String
+  icon           String   @default("Activity")
+  badge          String?
+  machineDetails String?
+  prepTips       String?
+  featured       Boolean  @default(false)
+  order          Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Doctor {
+  id                String   @id @default(cuid())
+  name              String
+  qualification     String
+  department        String
+  designation       String
+  experience        String?
+  consultationHours String
+  photo             String?
+  bio               String
+  order             Int      @default(0)
+  active            Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model LabTest {
+  id              String   @id @default(cuid())
+  code            String?  @unique
+  name            String
+  category        String   // "BLOOD_TEST", "ECG", "ONCO_MARKER"
+  sampleType      String   @default("Blood (Serum)")
+  fastingRequired Boolean  @default(false)
+  reportTime      String   @default("Same Day")
+  description     String?
+  price           Float?
+  order           Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Article {
+  id          String    @id @default(cuid())
+  type        String    @default("BLOG") // "BLOG" or "EVENT"
+  slug        String    @unique
+  title       String
+  excerpt     String
+  content     String
+  coverImage  String?
+  author      String    @default("Swasti Medical Editorial Team")
+  eventDate   DateTime?
+  location    String?
+  published   Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Appointment {
+  id            String   @id @default(cuid())
+  patientName   String
+  phone         String
+  email         String?
+  serviceName   String
+  category      String?
+  preferredDate String
+  preferredTime String?
+  notes         String?
+  status        String   @default("PENDING") // PENDING, CONFIRMED, COMPLETED, CANCELLED
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String
+  email     String?
+  subject   String?
+  message   String
+  status    String   @default("UNREAD")
+  createdAt DateTime @default(now())
+}
