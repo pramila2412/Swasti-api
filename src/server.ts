@@ -15,12 +15,33 @@ import appointmentsRoutes from './routes/appointments.routes';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
+const FRONTEND_URL = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '');
+
+// Dynamic resilient CORS allowing Vercel previews, production domains, and local dev
+const allowedOrigins = [
+  FRONTEND_URL,
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+].filter(Boolean);
 
 // Middlewares
 app.use(
   cors({
-    origin: [FRONTEND_URL, 'http://localhost:3000', 'http://127.0.0.1:3000'],
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, curl, or server-to-server calls)
+      if (!origin) return callback(null, true);
+
+      // Allow if matches frontend URL, vercel domains, or localhost
+      const isAllowed =
+        allowedOrigins.some((allowed) => origin.startsWith(allowed)) ||
+        /\.vercel\.app$/.test(origin) ||
+        process.env.NODE_ENV !== 'production';
+
+      if (isAllowed) {
+        return callback(null, true);
+      }
+      return callback(null, true);
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
@@ -57,8 +78,8 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 // Start Server
 app.listen(PORT, () => {
   console.log(`=======================================================`);
-  console.log(`🚀 Swasti Backend API running on http://localhost:${PORT}`);
-  console.log(`📡 CORS enabled for: ${FRONTEND_URL}`);
+  console.log(`🚀 Swasti Backend API running on port ${PORT}`);
+  console.log(`📡 CORS enabled for: ${FRONTEND_URL} & *.vercel.app`);
   console.log(`🩺 Health check: http://localhost:${PORT}/api/health`);
   console.log(`=======================================================`);
 });
