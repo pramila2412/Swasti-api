@@ -75,11 +75,15 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   res.status(500).json({ error: err.message || 'Internal Server Error' });
 });
 
-// Start Server
-app.listen(PORT, () => {
-  console.log(`=======================================================`);
-  console.log(`🚀 Swasti Backend API running on port ${PORT}`);
-  console.log(`📡 CORS enabled for: ${FRONTEND_URL} & *.vercel.app`);
-  console.log(`🩺 Health check: http://localhost:${PORT}/api/health`);
-  console.log(`=======================================================`);
-});
+// Start Server (only listen when running as standalone server, not on Vercel serverless)
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`=======================================================`);
+    console.log(`🚀 Swasti Backend API running on port ${PORT}`);
+    console.log(`📡 CORS enabled for: ${FRONTEND_URL} & *.vercel.app`);
+    console.log(`🩺 Health check: http://localhost:${PORT}/api/health`);
+    console.log(`=======================================================`);
+  });
+}
+
+export default app;
