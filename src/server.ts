@@ -17,57 +17,44 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const FRONTEND_URL = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '');
 
-// Dynamic resilient CORS allowing Vercel previews, production domains, and local dev
-const allowedOrigins = [
-  FRONTEND_URL,
-  'http://localhost:3000',
-  'http://127.0.0.1:3000',
-].filter(Boolean);
+// Dynamic resilient CORS allowing all Vercel previews, production domains, and local dev
+const corsOptions = {
+  origin: true, // Echoes the request origin so all *.vercel.app and custom domains are allowed
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+};
 
-// Middlewares
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps, curl, or server-to-server calls)
-      if (!origin) return callback(null, true);
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
-      // Allow if matches frontend URL, vercel domains, or localhost
-      const isAllowed =
-        allowedOrigins.some((allowed) => origin.startsWith(allowed)) ||
-        /\.vercel\.app$/.test(origin) ||
-        process.env.NODE_ENV !== 'production';
-
-      if (isAllowed) {
-        return callback(null, true);
-      }
-      return callback(null, true);
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  })
-);
 app.use(cookieParser());
 app.use(express.json());
 
-// API Health Check
-app.get('/api/health', (req, res) => {
+// Root & Health Checks (works on /, /health, and /api/health)
+const healthHandler = (req: express.Request, res: express.Response) => {
   res.json({
     status: 'online',
     service: 'Swasti PET/CT & Nuclear Medicine API Server',
     version: '1.0.0',
+    database: process.env.DATABASE_URL ? 'configured' : 'missing',
+    environment: process.env.NODE_ENV || 'production',
     timestamp: new Date().toISOString(),
   });
-});
+};
 
-// Mount Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/settings', settingsRoutes);
-app.use('/api/services', servicesRoutes);
-app.use('/api/doctors', doctorsRoutes);
-app.use('/api/lab-tests', labRoutes);
-app.use('/api/articles', articlesRoutes);
-app.use('/api/appointments', appointmentsRoutes);
+app.get('/', healthHandler);
+app.get('/health', healthHandler);
+app.get('/api/health', healthHandler);
+
+// Mount Routes (supporting both /api/* and direct subpaths on Vercel)
+app.use(['/api/auth', '/auth'], authRoutes);
+app.use(['/api/settings', '/settings'], settingsRoutes);
+app.use(['/api/services', '/services'], servicesRoutes);
+app.use(['/api/doctors', '/doctors'], doctorsRoutes);
+app.use(['/api/lab-tests', '/lab-tests'], labRoutes);
+app.use(['/api/articles', '/articles'], articlesRoutes);
+app.use(['/api/appointments', '/appointments'], appointmentsRoutes);
 
 // Error Handling
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -80,7 +67,7 @@ if (!process.env.VERCEL) {
   app.listen(PORT, () => {
     console.log(`=======================================================`);
     console.log(`🚀 Swasti Backend API running on port ${PORT}`);
-    console.log(`📡 CORS enabled for: ${FRONTEND_URL} & *.vercel.app`);
+    console.log(`📡 CORS enabled for all origins`);
     console.log(`🩺 Health check: http://localhost:${PORT}/api/health`);
     console.log(`=======================================================`);
   });
